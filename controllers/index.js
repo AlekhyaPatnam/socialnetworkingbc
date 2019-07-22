@@ -82,3 +82,140 @@ exports.signUp = function (req, res) {
             }
         })
 }
+
+
+exports.sendConnection = function (req, res) {
+
+    var query = [
+        'Match (a:User{uuid: {sid}})',
+        'Match (b:User{uuid: {rid}})',
+        'Create (a)-[r:Has_Connection{staus: false, uuid: {id}}]-(b)',
+        'Return a,b,r'
+    ].join('\n');
+
+    var params = {
+        sid: req.body.sid,
+        rid: req.body.rid,
+        id: uuid()
+    }
+
+    var data = [];
+
+    session
+        .run(query, params)
+        .subscribe({
+            onNext: function (records) {
+                data.push(records.toObject());
+            },
+            onCompleted: function () {
+                session.close();
+                res.send(data);
+            },
+            onError: function (error) {
+                console.log(error);
+                res.send(error);
+            }
+        })
+}
+
+exports.makeConnection = function (req, res) {
+
+    var query = [
+        'Match (a:User{uuid: {sid}})',
+        'Match (b:User{uuid: {rid}})',
+        'Match (a)-[r:Has_Connection]-(b)',
+        'Set r.status=true',
+        'Return a,b,r'
+    ].join('\n');
+
+    var params = {
+        sid: req.body.sid,
+        rid: req.body.rid
+    }
+
+    var data = [];
+
+    session
+        .run(query, params)
+        .subscribe({
+            onNext: function (records) {
+                data.push(records.toObject());
+            },
+            onCompleted: function () {
+                session.close();
+                res.send(data);
+            },
+            onError: function (error) {
+                console.log(error);
+                res.send(error);
+            }
+        })
+}
+
+exports.deleteConnection = function (req, res) {
+
+    var query = [
+        'Match (a:User{uuid: {sid}})',
+        'Match (b:User{uuid: {rid}})',
+        'Match (a)-[r:Has_Connection]-(b)',
+        'Delete r'
+    ].join('\n');
+
+    var params = {
+        sid: req.body.sid,
+        rid: req.body.rid
+    }
+
+    var data = [];
+
+    session
+        .run(query, params)
+        .subscribe({
+            onNext: function (records) {
+                data.push(records.toObject());
+            },
+            onCompleted: function () {
+                session.close();
+                res.send(data);
+            },
+            onError: function (error) {
+                console.log(error);
+                res.send(error);
+            }
+        })
+}
+
+exports.createStatus = function (req, res) {
+
+    var query = [
+        'Match (u:User{uuid: {uid}})',
+        'Create (u)-[r:Has_Post{uuid: {rid}}]->(p:Post{uuid: {id}, content: {content}, date: {date}})',
+        'Return u,p,r'
+    ].join('\n');
+
+    var params = {
+        uid: req.body.uid,
+        rid: uuid(),
+        id: uuid(),
+        content: req.body.content,
+        date: req.body.date
+    }
+
+    var data = [];
+
+    session
+        .run(query, params)
+        .subscribe({
+            onNext: function (records) {
+                data.push(records.toObject());
+            },
+            onCompleted: function () {
+                session.close();
+                res.send(data);
+            },
+            onError: function (error) {
+                console.log(error);
+                res.send(error);
+            }
+        })
+}
