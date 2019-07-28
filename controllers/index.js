@@ -43,7 +43,7 @@ exports.signUp = function (req, res) {
 
     var query = [
         'Merge (u:User{email: {emailId}})',
-        'On Create set u.uuid={id}, u.username= {username}, u.phone= {phone}, u.dob= {dob}',
+        'On Create set u.uuid={id}, u.username= {username}, u.dob= {dob}',
         'Return u'
     ].join('\n');
 
@@ -52,7 +52,9 @@ exports.signUp = function (req, res) {
         id: uuid(),
         emailId: req.body.email,
         password: req.body.password,
-        username: req.body.username,
+        username: req.body.firstname,
+        firstname: req.body.firstname,
+        lastname: req.body.lastname,
         phone: req.body.phone,
         dob: req.body.dob
     }
@@ -188,13 +190,13 @@ exports.deleteConnection = function (req, res) {
 exports.createStatus = function (req, res) {
 
     var query = [
-        'Match (u:User{uuid: {uid}})',
+        'Match (u:User{email: {email}})',
         'Create (u)-[r:Has_Post{uuid: {rid}}]->(p:Post{uuid: {id}, content: {content}, date: {date}})',
         'Return u,p,r'
     ].join('\n');
 
     var params = {
-        uid: req.body.uid,
+        email: req.body.email,
         rid: uuid(),
         id: uuid(),
         content: req.body.content,
@@ -219,3 +221,36 @@ exports.createStatus = function (req, res) {
             }
         })
 }
+
+exports.getposts = function (req, res) {
+
+    var query = [
+        'Match (u:User{email: {email}})-[r:Has_Post]->(p:Post)',
+        'Return u,p,r'
+    ].join('\n');
+
+
+    var params = {
+        email: req.body.email
+    }
+
+    var data = [];
+
+    session
+        .run(query, params)
+        .subscribe({
+            onNext: function (records) {
+                data.push(records.toObject());
+            },
+            onCompleted: function () {
+                session.close();
+                res.send(data);
+            },
+            onError: function (error) {
+                console.log(error);
+                res.send(error);
+            }
+        })
+}
+
+

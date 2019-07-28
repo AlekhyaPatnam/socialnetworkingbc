@@ -5,3 +5,6 @@ app.get('/', controller.helloworld);
 
 app.post('/api/signin', controller.signIn);
 app.post('/api/signup', controller.signUp);
+app.post('/api/createStatus', controller.createStatus);
+
+app.get('/api/getposts', controller.getposts);
