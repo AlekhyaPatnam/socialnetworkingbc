@@ -29,18 +29,49 @@ exports.helloworld = function (req, res) {
 
 
 exports.signIn = function (req, res) {
+
+    console.log(req.body);
+
     firebase.auth().signInWithEmailAndPassword(req.body.email, req.body.password).catch(function(error) {
         // Handle Errors here.
         var errorCode = error.code;
         var errorMessage = error.message;
         // ...
       });
-      res.send();
+
+    var query = [
+        'Match (u:User{email: {email}})',
+        'Return u'
+    ].join('\n');
+
+
+    var params = {
+        email: req.body.email
+    }
+
+    var data = [];
+
+    session
+        .run(query, params)
+        .subscribe({
+            onNext: function (records) {
+                data.push(records.toObject().u.properties);
+            },
+            onCompleted: function () {
+                session.close();
+                res.send(data);
+            },
+            onError: function (error) {
+                console.log(error);
+                res.send(error);
+            }
+        })
 }
 
 
 exports.signUp = function (req, res) {
-
+    console.log("her", req.body);
+    
     var query = [
         'Merge (u:User{email: {emailId}})',
         'On Create set u.uuid={id}, u.username= {username}, u.dob= {dob}',
@@ -59,6 +90,13 @@ exports.signUp = function (req, res) {
         dob: req.body.dob
     }
 
+    firebase.auth().createUserWithEmailAndPassword(params.emailId, params.password).catch(function(error) {
+        // Handle Errors here.
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        console.log(error);
+        // ...
+      });
     var data = [];
 
     session
@@ -69,13 +107,6 @@ exports.signUp = function (req, res) {
             },
             onCompleted: function () {
                 session.close();
-                firebase.auth().createUserWithEmailAndPassword(params.emailId, params.password).catch(function(error) {
-                    // Handle Errors here.
-                    var errorCode = error.code;
-                    var errorMessage = error.message;
-                    console.log(error);
-                    // ...
-                  });
                 res.send(data);
             },
             onError: function (error) {
@@ -89,8 +120,8 @@ exports.signUp = function (req, res) {
 exports.sendConnection = function (req, res) {
 
     var query = [
-        'Match (a:User{uuid: {sid}})',
-        'Match (b:User{uuid: {rid}})',
+        'Match (a:User{email: {sid}})',
+        'Match (b:User{email: {rid}})',
         'Create (a)-[r:Has_Connection{staus: false, uuid: {id}}]-(b)',
         'Return a,b,r'
     ].join('\n');
@@ -123,8 +154,8 @@ exports.sendConnection = function (req, res) {
 exports.makeConnection = function (req, res) {
 
     var query = [
-        'Match (a:User{uuid: {sid}})',
-        'Match (b:User{uuid: {rid}})',
+        'Match (a:User{email: {sid}})',
+        'Match (b:User{email: {rid}})',
         'Match (a)-[r:Has_Connection]-(b)',
         'Set r.status=true',
         'Return a,b,r'
@@ -157,8 +188,8 @@ exports.makeConnection = function (req, res) {
 exports.deleteConnection = function (req, res) {
 
     var query = [
-        'Match (a:User{uuid: {sid}})',
-        'Match (b:User{uuid: {rid}})',
+        'Match (a:User{email: {sid}})',
+        'Match (b:User{email: {rid}})',
         'Match (a)-[r:Has_Connection]-(b)',
         'Delete r'
     ].join('\n');
@@ -226,12 +257,12 @@ exports.getposts = function (req, res) {
 
     var query = [
         'Match (u:User{email: {email}})-[r:Has_Post]->(p:Post)',
-        'Return u,p,r'
+        'Return u,p'
     ].join('\n');
 
 
     var params = {
-        email: req.body.email
+        email: req.query.email
     }
 
     var data = [];
@@ -253,4 +284,28 @@ exports.getposts = function (req, res) {
         })
 }
 
+exports.getusers = function (req, res) {
+    var query = [
+        'Match (u:User)',
+        'return u'
+    ].join('\n');
+
+    var data = [];
+
+    session
+        .run(query)
+        .subscribe({
+            onNext: function (records) {
+                data.push(records.toObject().u.properties);
+            },
+            onCompleted: function () {
+                session.close();
+                res.send(data);
+            },
+            onError: function (error) {
+                console.log(error);
+                res.send(error);
+            }
+        })
+}
 
